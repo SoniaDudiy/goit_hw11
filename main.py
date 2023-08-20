@@ -12,25 +12,41 @@ class Phone(Field):
     def is_valid_phone(self):
         pass 
 
+    @property
+    def value(self):
+        return self.__value
+
+    @value.setter
+    def value(self, new_value):
+        if self.is_valid_phone(new_value):
+            self.__value = new_value
+        else:
+            raise ValueError("Invalid phone number")        
+
 class Birthday(Field):
     def __init__(self, value):
         try:
             self.value = datetime.strtime(value, '%Y-%m-%d').date()
         except ValueError:
             raise ValueError("Invalid date format. Please use 'YYYY-MM-DD'.")
+    
+    @property
+    def value(self):
+        return self.__value
 
-    def days_to_birthday(self):
-        today = datetime.now().date()
-        next_birthday = datetime(today.year, self.value.month, self.value.day).date()
-        if next_birthday < today:
-            next_bithday = datetime(today.year + 1, self.value.month, self.value.day).date()
-        return (next_birthday - today).days                         
+    @value.setter
+    def value(self, new_value):
+        try:
+            self.__value == datetime.strptime(new_value, '%Y-%m-%d').date()
+        except ValueError:
+            raise ValueError("Invalid date format. Please use 'YYYY-MM-DD'.")
 
 class Record:
-    def __init__(self, name: str, phones: list, emails: list):
+    def __init__(self, name: str, phones: list, emails: list, birthday: str = None):
         self.name = Name(name)
         self.phones = [Phone(phone) for phone in phones]
         self.emails = emails
+        self.birthday = Birthday(birthday) if birthday else None
 
     def add_phone(self, phone):
         phone_number = Phone(phone)
@@ -59,6 +75,19 @@ class Record:
         return None             
 
 class AddressBook(UserDict):
+    def __iter__(self):
+        self._iter_index = 0
+        return self
+
+    def __next__(self):
+        if self._iter_index < len(self.data):
+            key = list(self.data.keys())[self._iter_index]    
+            value = self.data[key]
+            self._iter_index += 1
+            return (key, value)
+        else:
+            raise StopIteration
+                
     def add_record(self, record: Record):
         self.data[record.name.value] = record
 
